@@ -1,6 +1,6 @@
 // erc20.test.js
 
-const { BN, ether } = require('@openzeppelin/test-helpers');
+const { BN, ether, expectRevert } = require('@openzeppelin/test-helpers');
 const { expect } = require('chai');
 const ERC20 = artifacts.require('ERC20Token');
 
@@ -78,5 +78,23 @@ contract('ERC20', function (accounts) {
     
         expect(balanceOwnerAfter).to.be.bignumber.equal(balanceOwnerBefore.sub(amount));
         expect(balanceRecipientAfter).to.be.bignumber.equal(balanceRecipientBefore.add(amount));
+    });
+
+    it("verifie le revert transferFrom", async function() {
+        let amount = new BN(10);
+
+        await expectRevert(this.ERC20Instance.transferFrom(owner, recipient, amount, {from:recipient2}),
+        "ERC20: transfer amount exceeds allowance");
+    })
+
+    it("check update approve after transferForm", async function() {
+        let amount = new BN(10);
+
+        await this.ERC20Instance.approve(recipient, new BN(100), {from:owner});
+        await this.ERC20Instance.transferFrom(owner, recipient2, amount, {from:recipient});
+
+        let allowanceAfter = await this.ERC20Instance.allowance(owner, recipient);
+
+        expect(allowanceAfter).to.be.bignumber.equal(new BN(90));
     });
 });
